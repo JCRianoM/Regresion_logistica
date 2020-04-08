@@ -1,5 +1,5 @@
 ---
-title: "Taller # 3"
+title: "Taller # 4"
 subtitle: "Ejericicio regresión logística"
 author: "Julián Camilo Riaño Moreno"
 date: "`r format(Sys.Date(), '%A, %B %d, %Y')`"
