@@ -1,0 +1,334 @@
+---
+title: "Taller # 3"
+subtitle: "Ejericicio regresión logística"
+author: "Julián Camilo Riaño Moreno"
+date: "`r format(Sys.Date(), '%A, %B %d, %Y')`"
+output:
+  pdf_document: 
+    keep_tex: yes
+    toc: yes
+    toc_depth: 3
+  html_document: 
+    keep_md: true
+    toc: yes
+    toc_float: true
+    code_folding: hide
+  keep_tex: yes
+  word_document: default
+  fig_cap: yes
+header-includes:
+- \usepackage{float}
+- \floatplacement{figure}{H}
+- \usepackage{subfig}
+- \usepackage{graphicx}
+---
+
+```{r setup, include=FALSE}
+# define knitr options
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, fig.pos= "h")
+```
+
+```{r paquetes y exploración de datos, include=FALSE}
+
+# instalar paquetes. 
+library(tidyverse)
+library(gridExtra)
+library(knitr)
+library(xtable)
+library(pander) ##paquete para tablas pandoc
+library(caret)
+library(MASS)
+library(pscl)
+library(generalhoslem)
+
+denguedb<- read.csv('dengue.csv')
+namescoldeng <- c('edad', 'nivel_soc_econ', 'sector_vive', 'enf_dengue')
+colnames(denguedb) <- namescoldeng
+```
+
+# Descripción de las variables. 
+
+```{r tabla de descripción de la variables, echo=FALSE, message=FALSE, results='asis'}
+vardadasdeng <- c('$\\beta_0$', '$\\beta_1$', '$\\beta_2$', '$\\beta_3$')
+def_vardeng <- c('Presenta dengue',
+             'Edad', 
+             'Nivel socioeconomico',
+             'Sector en el que vive')
+unidaddeng <- c('1 = si;  0 = No','Anos', '1 = nivel alto; 2 = nivel medio; 3 = nivel bajo',
+            'Sector = 1 o 2')
+tip_vardeng <- c('v_respuesta', 'v_regresora', 'v_regresora', 'v_regresora')
+
+dbnamescoldeng  <- c('enf_dengue', 'edad', 'nivel_soc_econ', 'sector_vive')
+
+tipo <- c('Categorica binomial', 'Cuantitativa distreta', 'Categorica ordinal', 'Categorica nominal')
+
+names_dfdeng <- c('Modelo', 'Definicion', 'Tipo de variable (en modelo)',
+              'Nombre de variable (en la base de datos)', 'Unidad', 'Tipo de variable')
+
+df_modelodeng <- data.frame(vardadasdeng, def_vardeng, tip_vardeng, dbnamescoldeng, unidaddeng, tipo)
+colnames(df_modelodeng) <- names_dfdeng
+
+pandoc.table(df_modelodeng, 
+             caption="Organizacion de las variables del taller #4", 
+             align = 'c', 
+             split.table = Inf) 
+```
+
+# Respuesta a la preguntas del taller # 4
+
+## Problema
+
+En un estudio para investigar la incidencia de dengue en una determinada ciudad
+de la costa mexicana, un total de 196 individuos, escogidos aleatoriamente en dos
+de los sectores de la ciudad, respondió a las siguientes preguntas: (i) (edad) Edad
+(en a~nos), (ii) (nivel) nivel socioeconómico (1 nivel alto/ 2 nivel medio/ 3 nivel
+bajo), (iii) (sector) sector en el que vive y (iv) (enfermedad) si el entrevistado
+contrajo o no la enfermedad recientemente (1 si/ 0 no).
+
+### Pregunta #1: Considere un modelo logístico lineal para explicar la probabilidad de que un individuo contraiga la enfermedad a partir de las tres variables explicativas. Describa las componentes aleatoria y sistemática del modelo propuesto.
+
+* Componentes aleatoria: corresponde a la variable respuesta `enf_dengue`. Como está descrito en la tabla 1. Es una variables categórica dicotómica o binomia, que puede tomar el valor 1 cuando el caso tiene la enfermedad del dengue o valor 0 cuando no la tiene. 
+* Compoenentes sistemática: corresponde a las tres variables regresoras `edad`, `nivel_soc_econ`, `sec_vive`. Las especificaciones acerca de la unidad de medida y el tipo de variable está descrito en la tabla 1. 
+* Función enlace o función $logit$: $\ln \frac{\pi}{\pi - 1}$
+
+```{r modelo de regresión logistica inicial, echo=FALSE, message=FALSE}
+denguelogit <- glm(enf_dengue ~ edad + factor(nivel_soc_econ) + factor(sector_vive), data = denguedb, family = "binomial")
+summalogit <- summary(denguelogit)
+denguecoeff <- data.frame(summalogit$coefficients)
+colnames(denguecoeff) <- c("Estimado", "ErrorStand", "$z-value$", "$p-value$")
+kable(denguecoeff, 
+             caption = 'Estimadores, $z-values$, $p-values$ del modelo de regresión logística', 
+             align = 'r', 
+             digits = 4)
+```
+
+La tabla 2. muestra los estimadores obtenidos por el modelo logistico aplicado. Allí se puede observar que tan solo las variables regresoras `edad`y `sector_vive`son significativas ($p - value < 0.05$) y por lo tanto son suceptibles de interpretación. El nivel socio económico en niguno de sus niveles (1, 2, o 3) tienen significancia. 
+
+```{r pruebas de bondad del modelo de regresión, echo=FALSE, message=FALSE, warning=FALSE}
+McFadd <- pR2(denguelogit)
+
+hldenguedb <- logitgof(exp = fitted(denguelogit), obs = denguedb$enf_dengue)
+
+hl_dfdengue <- data.frame(obs_p=hldenguedb$observed[,2], exp_p=hldenguedb$expected[,2])
+bondad <- c(McFadd["McFadden"], hldenguedb$statistic, hldenguedb$parameter, hldenguedb$p.value)
+bondad_df <- data.frame(matrix(nrow = 1,data = bondad))
+colbondad <- c('ps-$R^2$', '$ji^2$ HL', 
+                      'G.libertad ($ji^2$ HL)', '$p-value(ji^2 HL)$')
+colnames(bondad_df) <- colbondad
+
+kable(bondad_df, caption = 'Tests de bondad de ajuste del modelo: \n Pseudo $R^2$ de McFadden (ps-$R^2$) & 
+      Test de Hosmer-Lemeshow ($ji^2$ HL)',
+      align = 'c',
+      digits = 4,
+      escape=TRUE)
+```
+
+Para evaluar la bondad del modelo aplicado ser realizó dos pruebas de bodad de ajuste (tabla 3). En primer lugar, se llevo acabo un pseudo-$R^2$ de McFadden con un resultado de 0.106 si este valor rodea 0.2 a 0.4 quiere decir buen ajuste[^1]. Según lo anterior el estadístico de McFadden no muestra buen ajuste del modelo. 
+
+En la misma tabla 3. se encuentra el resultado del test de Hosmer-Lemeshow, es cual establece que $H_0 = $ buen ajuste del modelo y $H_1 =$ modelo no tiene buen ajuste. Este ajuste se da através de las diferencias entre los valores observados y los valores esperados predichos por el modelo, entonces $H_0 = $ indica que no hay diferencias significativas entre los valores observados y los esperados y $H_1 =$ que existen diferencias significativas. 
+
+
+```{r gráfica de relación de esperados y observados Hosmer-lemeshow, echo=FALSE, message=FALSE, fig.cap= "Relación esperados vs observados en un modelo probado por test Hosmer-Lemeshow", fig.height=4, fig.width=5 }
+ggplot(hl_dfdengue, aes(x=obs_p, y=exp_p)) +
+    geom_point() +
+    geom_smooth() +
+    geom_abline(intercept=0, slope=1, size=0.5)  # reference line
+```
+
+Como se puede observar en la tabla 3. El test de Hosmer-Lemeshow no es significativo ($p - value = 0.4273, \geq 0.05$). De manera que no se puede rechazar la hipotesis nula y se puede concluir que el modelo tiene buen ajuste. La figura 1. muestra la relación entre los valores observados y esperados por el modelo. La curva azul es la curva de correlación y la negra corresponde a una correlación exacta. De esto se puede concluir que la relación entre las diferencias de los valores observados y esperados giran entorno la linea de referencia por lo tanto sus defencias no son muy grandes.
+
+```{r deviance análisis, echo=FALSE, message=FALSE}
+deviance <- data.frame(denguelogit$null.deviance, denguelogit$df.null, 
+                       denguelogit$deviance, denguelogit$df.residual)
+deviancenames <- c('Deviance_NULL (DN)', 'G.libertad DN', 'Deviance_modelo (DM)', 'G.libertad(DM)')
+colnames(deviance) <- deviancenames
+
+kable(deviance, 
+      caption = 'Comparación Deviance NULL vs Deviance del modelo LOGIT',
+      align = 'c', 
+      digits = 4, 
+      escape = TRUE)
+
+```
+
+Finalmente se realizó un análisis de *Deviance* los cuales servir como indicadores de *maldad* y ajuste del modelo. En la tabla 4 se muestra el valor del *deviance* en un modelo sin variables regresoras (NULL) con un resultado de 263.33 y el valor del *deviance* en el modelo logístico resultado para las variables dadas con un resultado de 211.22. En este caso se asume que si el *deviance* del modelo es menor que el *deviance* NULL, el modelo tiene mejor ajuste, lo que es verdadero para este caso. 
+
+```{r exponenciales del odds, echo=FALSE, message=FALSE}
+expcfdeng <- exp(coef(denguelogit))
+expcfdeng_df <- as.data.frame(expcfdeng)
+minus1 <- c((1-expcfdeng_df$expcfdeng[1])*100, (expcfdeng_df$expcfdeng[2:5] -1)*100)
+interpcfdeng <- cbind(expcfdeng_df, minus1)
+namesexp <- c('$e^{coeff} = \\pi$', '$(\\pi-1)\\times100 (\\%)$')
+colnames(interpcfdeng) <- namesexp
+
+kable(interpcfdeng, 
+      caption = 'Exponencial razón de odds $e^{coeff}$', 
+      digits = 4, 
+      align = 'c', 
+      escape = TRUE)
+
+```
+
+
+### Pregunta #2: La probabilidad de que un individuo contraiga la enfermedad depende de su edad?
+El análisis de los estimadores los $z-value$ y sus correspondientes $p-values$ evidenciados en la tabla 2, se podría afirmar que la variable `edad` si puede afectar el $\beta_0$ (tener la enfermedad dengue o la variable respuesta `enf_dengue`). En este caso se podría afirmar que por cada incremento en una unidad de `edad` el chance de tener Dengue incrementa en un 2.73% como se puede ver en la tabla 5. 
+
+
+### Pregunta #3: La probabilidad de que un individuo contraiga la enfermedad depende del sector de la ciudad en el que vive?
+
+En este caso a través de los resultados mostrados en la tabla 2, se podría afirmar que la variable `sector_vive` si puede afectar el $\beta_0$ (tener la enfermedad dengue o la variable respuesta `enf_dengue`). En este caso se podría afirmar que el vivir en el sector 2 incrementa el 243% el chance de tener Dengue respecto a vivir en el sector 1 como se puede ver en los resultados de la tabla 5. 
+
+### Pregunta #4: Según el modelo estimado, cuál es la probabilidad de contraer dengue de una persona de 30 añoos, nivel socioeconómico alto y que vive en el sector 2 de la ciudad?
+
+```{r predicción caso dado, message=FALSE, results=FALSE}
+predict(denguelogit, data.frame(sector_vive=2, nivel_soc_econ=1,edad=30), type="response")
+
+
+```
+
+Para dar respuesta a la pregunta 4 como se puede ver se hizo uso de la función `predict`. Definiendo los paramétros solicitados, se obtiene que, a traés del modelo *logit* realizado la probabilidad de contraer la enfermedad por Dengue en una persona de 30 años que viva en el sector 2 y que sea de nivel socioeconómico alto es del 44%. 
+
+### Pregunta #5: Seleccione el "mejor" modelo para describir el fenómeno bajo estudio. Use como guía la medida de calidad del ajuste AIC. Verifíque que todas las variables en el modelo elegido sean estadísticamente signifícativas. INTERPRETE los parámetros del modelo escogido.
+
+```{r mejormodelo por AIC, message=FALSE, echo=FALSE}
+Full_denguelogit <- glm(enf_dengue ~ edad + factor(nivel_soc_econ) + sector_vive, data = denguedb, family = "binomial")
+bestmodel_deng <- step(object = Full_denguelogit, direction = "both", trace = FALSE)
+
+
+mejorModel <- glm(formula = enf_dengue ~ edad + factor(sector_vive), family = "binomial", data = denguedb)
+summejorAIC<- summary(mejorModel)
+
+```
+
+```{r stepwise selección AIC, message=FALSE, results=FALSE}
+step(object = Full_denguelogit, direction = "both", trace = FALSE)
+```
+
+Para realizar la selección del mejor modelo se utilizo una estrategía *stepwise* bidireccional [^2] (forward y reverse), a través de la función `step`. Su resultado permitió establecer como "mejor modelo" (como se designara en adelante), de únicamente dos variables regresoras `edad` y `sec_vive`, excluyendo la variables no siginificativas en el modelo original `nivel_soc_econ` 2 y 3. Como se puede observar en la tabla 6 el AIC del mejor modelo es menor que el AIC el modelo original, lo que corrobora al primero como "mejor", para las variables dadas. De esta forma, los análisis a continuación se realizarán con este "mejor modelo" de dos variables regresoras. 
+
+
+```{r comparación AIC, echo=FALSE, message=FALSE}
+AICcomparison <- data.frame(denguelogit$aic, mejorModel$aic)
+AICnames <- c('AIC_modelo_original', 'AIC_mejor_modelo')
+colnames(AICcomparison) <- AICnames
+
+kable(AICcomparison, 
+      caption = 'Comparación de valor AIC del modelo original y el mejor modelo obtenido por el estadítico',
+      align = 'c', 
+      digits = 4, 
+      escape = TRUE)
+```
+
+La tabla 7, muestra los estimadores del mejor modelo con sus respectivos $z-value$ y $p-value$ como se puede observar en este caso todas las variables son significativas estadísticamente ($p-value < 0.05$). 
+
+
+```{r tabla de estimadores mejor modelo, echo=FALSE, message=FALSE}
+dengueBEST <- data.frame(summejorAIC$coefficients)
+colnames(dengueBEST) <- c("Estimado", "ErrorStand", "$z-value$", "$p-value$")
+kable(dengueBEST, 
+             caption = 'Estimadores, $z-values$, $p-values$ del mejor modelo de regresión logística', 
+             align = 'r', 
+             digits = c(4, 4, 4, 20))
+```
+
+
+```{r pruebas de bondad del BEST modelo de regresión, echo=FALSE, message=FALSE}
+McFaddBEST <- pR2(mejorModel)
+
+hldenguedbBEST <- logitgof(exp = fitted(mejorModel), obs = denguedb$enf_dengue)
+hl_dfdengueBEST <- data.frame(obs_p=hldenguedbBEST$observed[,2], exp_p=hldenguedbBEST$expected[,2])
+```
+
+
+```{r organización test de bondad MEJOR MODELO, echo=FALSE, message=FALSE}
+
+bondadBEST <- c(McFaddBEST["McFadden"], hldenguedbBEST$statistic, 
+                hldenguedbBEST$parameter,
+                hldenguedbBEST$p.value)
+bondad_dfBEST <- data.frame(matrix(nrow = 1,data = bondadBEST))
+colbondadBEST <- c('ps-$R^2$', '$ji^2$ HL', 
+                      'G.libertad ($ji^2$ HL)', '$p-value(ji^2 HL)$')
+colnames(bondad_dfBEST) <- colbondadBEST
+
+kable(bondad_dfBEST, 
+      caption = 'Tests de bondad de ajuste del mejor modelo: \n Pseudo $R^2$ de McFadden (ps-$R^2$) & 
+      Test de Hosmer-Lemeshow ($ji^2$ HL)', 
+      align = 'c', 
+      digits = 4, 
+      escape = TRUE)
+```
+
+
+Al igual que con el modelo original, se realizaron para el mejor modelo las pruebas de bondad de pseudo $R^2$ de McFadden y el test de Hosmer-Lemeshow. Sus resultados pueden econtrarse en la tabla 8. Allí se evidencia que la valoración por el primer estadístico permanece en 0.10 lo que sugiere que el modelo no tiene buen ajuste. Sin embargo, el segundo estadístico muestra un $p-value < 0.05$ de manera que no se puede rechazar la hipotesis nula ($H_0$), y se puede considerar en este caso que el mejor modelo tiene buen ajuste dado que los valores esperados predichos por el modelo no se diferencia significativamente de los observados. Este hecho puede verse en la figura 2, sin embargo, allí se puede encontrar un mayor distanciamiento de la linea de correlación (azul) de la linea de referencia, que lo observado en el modelo original. 
+
+```{r gráfica de relación de esperados y observados MEJOR MODELO Hosmer-lemeshow, echo=FALSE, message=FALSE, fig.cap= "Relación esperados vs observados para mejor modelo probado por test Hosmer-Lemeshow", fig.height=4, fig.width=5}
+ggplot(hl_dfdengueBEST, aes(x=obs_p, y=exp_p)) +
+    geom_point() +
+    geom_smooth() +
+    geom_abline(intercept=0, slope=1, size=0.5)  # reference line
+```
+
+Finalmente se realizó una comparación de *Deviance* del mejor modelo, los resultados se pueden encontrar en la tabla 9. Donde al igual que el modelo original, el valor del *deviance* del modelo es menor que el valor del *deviance* sin variable regresoras (NULL), lo que comprueba un buen ajuste en el mejor modelo. 
+```{r análisis de deviance MEJOR MODELO, echo=FALSE, message=FALSE}
+
+devianceBEST <- data.frame(mejorModel$null.deviance, mejorModel$df.null, 
+                       mejorModel$deviance, mejorModel$df.residual)
+deviancenamesBEST <- c('Deviance_NULL (DN)', 'G.libertad DN', 'Deviance_modelo (DM)', 'G.libertad(DM)')
+colnames(devianceBEST) <- deviancenamesBEST
+
+kable(devianceBEST, 
+      caption = 'Comparación Deviance NULL vs Deviance del mejor modelo LOGIT',
+      align = 'c', 
+      digits = 4, 
+      escape = TRUE)
+
+```
+
+### Pregunta #6: Describa el desempeño del modelo seleccionado usando su matriz de confusión.
+
+Las tablas 10 y 11 corresponden a las tablas de confusión para el modelo original y el mejor modelo respectivamente. Como se puede observar el mejor modelo presenta menor error tipo 1 (falsos negativos) (41 vs 40). Por otra parte, se realizó el análisis de *Accuracy* (o exactitud) encontrandose que el mejor modelo tiene 75% de probabilidades de encontrar personas enfermas con Dengue, mientras el modelo original tiene un 74%. De esta forma se concluye que el mejor modelo, es más preciso que el original y de esté es posible realizar mejore interpretaciones. 
+```{r matriz de confusión y accuracy, echo=FALSE, message=FALSE, results=FALSE}
+
+########### Predicciones 
+predicDengue <- predict(denguelogit, type="response")
+predicDengueBEST <-  predict(mejorModel, type="response")
+
+### Matriz de confusión
+matrizconf <- table(denguedb$enf_dengue, predicDengue > 0.5)
+matrizconfBEST <- table(denguedb$enf_dengue, predicDengueBEST > 0.5)
+
+
+### formula para obtener accuracy
+accurate <- function(tabla){
+    x <- (tabla[1, 1] + tabla[2, 2])/(sum(tabla))
+    print(x)
+}
+
+AccMO <- accurate(matrizconf)
+AccMM <- accurate(matrizconfBEST)
+namesACC <- c('Accuraccy Modelo_original', 'Accuracy Mejor_Modelo')
+acc_df <- data.frame(AccMO, AccMM)
+colnames(acc_df) <- namesACC
+```
+
+```{r tablas de confusion comparación, echo=FALSE, message=FALSE}
+
+kable(matrizconf,
+      caption = 'Matriz de confusión para el modelo original',
+      align = 'c')
+kable(matrizconfBEST,
+      caption = 'Matriz de confusion para el mejor modelo', 
+      align = 'c')
+kable(acc_df, 
+      caption = 'Comparación *Accuracy* del modelo original Vs mejor modelo', 
+      align = 'c', 
+      digits = 4)
+```
+
+
+
+[^1]:Domencich & McFadden (1975) Urban Travel Demand: A Behavioral Analysis, Elsevier. 
+[^2]:Se intentó un *stepwise* unidireccional *forward* como se encontraba en el script facilitado por el profesor, pero se encontró que bajo esta estrategía el resultado era el mismo que el modelo original, con la variable `nivel_soc_econ`no significativa. Al utiliza el método bidireccional se garantizó que todas las variables fueran estadísticamente significativas. 
