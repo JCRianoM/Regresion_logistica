@@ -122,7 +122,7 @@
 \makeatother
 \subtitle{Ejericicio regresión logística}
 \author{Julián Camilo Riaño Moreno}
-\date{martes, abril 07, 2020}
+\date{miércoles, abril 08, 2020}
 
 \begin{document}
 \maketitle
@@ -131,6 +131,8 @@
 \setcounter{tocdepth}{3}
 \tableofcontents
 }
+\pagebreak
+
 \hypertarget{descripciuxf3n-de-las-variables.}{%
 \section{Descripción de las
 variables.}\label{descripciuxf3n-de-las-variables.}}
@@ -224,9 +226,9 @@ Categorica nominal\strut
 \bottomrule
 \end{longtable}
 
-\hypertarget{respuesta-a-la-preguntas-taller-4}{%
-\section{Respuesta a la preguntas taller \#
-4}\label{respuesta-a-la-preguntas-taller-4}}
+\hypertarget{respuesta-a-la-preguntas-del-taller-4}{%
+\section{Respuesta a la preguntas del taller \#
+4}\label{respuesta-a-la-preguntas-del-taller-4}}
 
 \hypertarget{problema}{%
 \subsection{Problema}\label{problema}}
@@ -291,10 +293,6 @@ aplicado. Allí se puede observar que tan solo las variables regresoras
 El nivel socio económico en niguno de sus niveles (1, 2, o 3) tienen
 significancia.
 
-\begin{verbatim}
-## fitting null model for pseudo-r2
-\end{verbatim}
-
 \begin{longtable}[]{@{}cccc@{}}
 \caption{Tests de bondad de ajuste del modelo: Pseudo \(R^2\) de
 McFadden (ps-\(R^2\)) \& Test de Hosmer-Lemeshow (\(ji^2\)
@@ -321,12 +319,12 @@ pseudo-\(R^2\) de McFadden con un resultado de 0.106 si este valor rodea
 anterior el estadístico de McFadden no muestra buen ajuste del modelo.
 
 En la misma tabla 3. se encuentra el resultado del test de
-Hosmer-Lemeshow, es cual establece que \$H\_0 = \$ buen ajuste del
-modelo y \(H_1 =\) modelo no tiene buen ajuste. Este ajuste se da
-através de las diferencias entre los valores observados y los valores
-esperados predichos por el modelo, entonces \$H\_0 = \$ indica que no
-hay diferencias significativas entre los valores observados y los
-esperados y \(H_1 =\) que existen diferencias significativas.
+Hosmer-Lemeshow, es cual establece que \(H_0\) = buen ajuste del modelo
+y \(H_1 =\) modelo no tiene buen ajuste. Este ajuste se da através de
+las diferencias entre los valores observados y los valores esperados
+predichos por el modelo, entonces \(H_0\) = indica que no hay
+diferencias significativas entre los valores observados y los esperados
+y \(H_1 =\) que existen diferencias significativas.
 
 \begin{figure}
 \centering
@@ -349,12 +347,12 @@ sus defencias no son muy grandes.
 \caption{Comparación Deviance NULL vs Deviance del modelo
 LOGIT}\tabularnewline
 \toprule
-Deviance\_NULL (DN) & G.libertad DN & Deviance\_modelo (DM) &
+Deviance\_NULL (DN) & G.libertad (DN) & Deviance\_modelo (DM) &
 G.libertad(DM)\tabularnewline
 \midrule
 \endfirsthead
 \toprule
-Deviance\_NULL (DN) & G.libertad DN & Deviance\_modelo (DM) &
+Deviance\_NULL (DN) & G.libertad (DN) & Deviance\_modelo (DM) &
 G.libertad(DM)\tabularnewline
 \midrule
 \endhead
@@ -453,16 +451,16 @@ Para realizar la selección del mejor modelo se utilizo una estrategía
   el resultado era el mismo que el modelo original, con la variable
   \texttt{nivel\_soc\_econ}no significativa. Al utiliza el método
   bidireccional se garantizó que todas las variables fueran
-  estadísticamente significativas.} (forward y reverse), a través de la
-función \texttt{step}. Su resultado permitió establecer como ``mejor
-modelo'' (como se designara en adelante), de únicamente dos variables
-regresoras \texttt{edad} y \texttt{sec\_vive}, excluyendo la variables
-no siginificativas en el modelo original \texttt{nivel\_soc\_econ} 2 y
-3. Como se puede observar en la tabla 6 el AIC del mejor modelo es menor
-que el AIC el modelo original, lo que corrobora al primero como
-``mejor'', para las variables dadas. De esta forma, los análisis a
-continuación se realizarán con este ``mejor modelo'' de dos variables
-regresoras.
+  estadísticamente significativas.} (forward y reverse, parametro
+\texttt{both}), a través de la función \texttt{step}. Su resultado
+permitió establecer como ``mejor modelo'' (como se designara en
+adelante), de únicamente dos variables regresoras \texttt{edad} y
+\texttt{sec\_vive}, excluyendo la variables no siginificativas en el
+modelo original \texttt{nivel\_soc\_econ} 2 y 3. Como se puede observar
+en la tabla 6 el AIC del mejor modelo es menor que el AIC el modelo
+original, lo que corrobora al primero como ``mejor'', para las variables
+dadas. De esta forma, los análisis a continuación se realizarán con este
+``mejor modelo'' de dos variables regresoras.
 
 \begin{longtable}[]{@{}cc@{}}
 \caption{Comparación de valor AIC del modelo original y el mejor modelo
@@ -500,10 +498,6 @@ factor(sector\_vive)2 & 1.1817 & 0.3370 & 3.5070 &
 4.532196e-04\tabularnewline
 \bottomrule
 \end{longtable}
-
-\begin{verbatim}
-## fitting null model for pseudo-r2
-\end{verbatim}
 
 \begin{longtable}[]{@{}cccc@{}}
 \caption{Tests de bondad de ajuste del mejor modelo: Pseudo \(R^2\) de
@@ -554,12 +548,12 @@ comprueba un buen ajuste en el mejor modelo.
 \caption{Comparación Deviance NULL vs Deviance del mejor modelo
 LOGIT}\tabularnewline
 \toprule
-Deviance\_NULL (DN) & G.libertad DN & Deviance\_modelo (DM) &
+Deviance\_NULL (DN) & G.libertad (DN) & Deviance\_modelo (DM) &
 G.libertad(DM)\tabularnewline
 \midrule
 \endfirsthead
 \toprule
-Deviance\_NULL (DN) & G.libertad DN & Deviance\_modelo (DM) &
+Deviance\_NULL (DN) & G.libertad (DN) & Deviance\_modelo (DM) &
 G.libertad(DM)\tabularnewline
 \midrule
 \endhead

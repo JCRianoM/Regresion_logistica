@@ -49,6 +49,8 @@ namescoldeng <- c('edad', 'nivel_soc_econ', 'sector_vive', 'enf_dengue')
 colnames(denguedb) <- namescoldeng
 ```
 
+\pagebreak
+
 # Descripción de las variables. 
 
 ```{r tabla de descripción de la variables, echo=FALSE, message=FALSE, results='asis'}
@@ -107,7 +109,7 @@ kable(denguecoeff,
 
 La tabla 2. muestra los estimadores obtenidos por el modelo logistico aplicado. Allí se puede observar que tan solo las variables regresoras `edad`y `sector_vive`son significativas ($p - value < 0.05$) y por lo tanto son suceptibles de interpretación. El nivel socio económico en niguno de sus niveles (1, 2, o 3) tienen significancia. 
 
-```{r pruebas de bondad del modelo de regresión, echo=FALSE, message=FALSE, warning=FALSE}
+```{r pruebas de bondad del modelo de regresión, echo=FALSE, message=FALSE, results=FALSE}
 McFadd <- pR2(denguelogit)
 
 hldenguedb <- logitgof(exp = fitted(denguelogit), obs = denguedb$enf_dengue)
@@ -118,7 +120,9 @@ bondad_df <- data.frame(matrix(nrow = 1,data = bondad))
 colbondad <- c('ps-$R^2$', '$ji^2$ HL', 
                       'G.libertad ($ji^2$ HL)', '$p-value(ji^2 HL)$')
 colnames(bondad_df) <- colbondad
+```
 
+```{r gráfica de pruebas de bondas modelo original, echo=FALSE, message=FALSE}
 kable(bondad_df, caption = 'Tests de bondad de ajuste del modelo: \n Pseudo $R^2$ de McFadden (ps-$R^2$) & 
       Test de Hosmer-Lemeshow ($ji^2$ HL)',
       align = 'c',
@@ -128,7 +132,7 @@ kable(bondad_df, caption = 'Tests de bondad de ajuste del modelo: \n Pseudo $R^2
 
 Para evaluar la bondad del modelo aplicado ser realizó dos pruebas de bodad de ajuste (tabla 3). En primer lugar, se llevo acabo un pseudo-$R^2$ de McFadden con un resultado de 0.106 si este valor rodea 0.2 a 0.4 quiere decir buen ajuste[^1]. Según lo anterior el estadístico de McFadden no muestra buen ajuste del modelo. 
 
-En la misma tabla 3. se encuentra el resultado del test de Hosmer-Lemeshow, es cual establece que $H_0 = $ buen ajuste del modelo y $H_1 =$ modelo no tiene buen ajuste. Este ajuste se da através de las diferencias entre los valores observados y los valores esperados predichos por el modelo, entonces $H_0 = $ indica que no hay diferencias significativas entre los valores observados y los esperados y $H_1 =$ que existen diferencias significativas. 
+En la misma tabla 3. se encuentra el resultado del test de Hosmer-Lemeshow, es cual establece que $H_0$ = buen ajuste del modelo y $H_1 =$ modelo no tiene buen ajuste. Este ajuste se da através de las diferencias entre los valores observados y los valores esperados predichos por el modelo, entonces $H_0$ = indica que no hay diferencias significativas entre los valores observados y los esperados y $H_1 =$ que existen diferencias significativas. 
 
 
 ```{r gráfica de relación de esperados y observados Hosmer-lemeshow, echo=FALSE, message=FALSE, fig.cap= "Relación esperados vs observados en un modelo probado por test Hosmer-Lemeshow", fig.height=4, fig.width=5 }
@@ -143,7 +147,7 @@ Como se puede observar en la tabla 3. El test de Hosmer-Lemeshow no es significa
 ```{r deviance análisis, echo=FALSE, message=FALSE}
 deviance <- data.frame(denguelogit$null.deviance, denguelogit$df.null, 
                        denguelogit$deviance, denguelogit$df.residual)
-deviancenames <- c('Deviance_NULL (DN)', 'G.libertad DN', 'Deviance_modelo (DM)', 'G.libertad(DM)')
+deviancenames <- c('Deviance_NULL (DN)', 'G.libertad (DN)', 'Deviance_modelo (DM)', 'G.libertad(DM)')
 colnames(deviance) <- deviancenames
 
 kable(deviance, 
@@ -207,7 +211,7 @@ summejorAIC<- summary(mejorModel)
 step(object = Full_denguelogit, direction = "both", trace = FALSE)
 ```
 
-Para realizar la selección del mejor modelo se utilizo una estrategía *stepwise* bidireccional [^2] (forward y reverse), a través de la función `step`. Su resultado permitió establecer como "mejor modelo" (como se designara en adelante), de únicamente dos variables regresoras `edad` y `sec_vive`, excluyendo la variables no siginificativas en el modelo original `nivel_soc_econ` 2 y 3. Como se puede observar en la tabla 6 el AIC del mejor modelo es menor que el AIC el modelo original, lo que corrobora al primero como "mejor", para las variables dadas. De esta forma, los análisis a continuación se realizarán con este "mejor modelo" de dos variables regresoras. 
+Para realizar la selección del mejor modelo se utilizo una estrategía *stepwise* bidireccional [^2] (forward y reverse, parametro `both`), a través de la función `step`. Su resultado permitió establecer como "mejor modelo" (como se designara en adelante), de únicamente dos variables regresoras `edad` y `sec_vive`, excluyendo la variables no siginificativas en el modelo original `nivel_soc_econ` 2 y 3. Como se puede observar en la tabla 6 el AIC del mejor modelo es menor que el AIC el modelo original, lo que corrobora al primero como "mejor", para las variables dadas. De esta forma, los análisis a continuación se realizarán con este "mejor modelo" de dos variables regresoras. 
 
 
 ```{r comparación AIC, echo=FALSE, message=FALSE}
@@ -235,7 +239,7 @@ kable(dengueBEST,
 ```
 
 
-```{r pruebas de bondad del BEST modelo de regresión, echo=FALSE, message=FALSE}
+```{r pruebas de bondad del BEST modelo de regresión, echo=FALSE, message=FALSE, results=FALSE}
 McFaddBEST <- pR2(mejorModel)
 
 hldenguedbBEST <- logitgof(exp = fitted(mejorModel), obs = denguedb$enf_dengue)
@@ -276,7 +280,7 @@ Finalmente se realizó una comparación de *Deviance* del mejor modelo, los resu
 
 devianceBEST <- data.frame(mejorModel$null.deviance, mejorModel$df.null, 
                        mejorModel$deviance, mejorModel$df.residual)
-deviancenamesBEST <- c('Deviance_NULL (DN)', 'G.libertad DN', 'Deviance_modelo (DM)', 'G.libertad(DM)')
+deviancenamesBEST <- c('Deviance_NULL (DN)', 'G.libertad (DN)', 'Deviance_modelo (DM)', 'G.libertad(DM)')
 colnames(devianceBEST) <- deviancenamesBEST
 
 kable(devianceBEST, 
@@ -327,7 +331,6 @@ kable(acc_df,
       align = 'c', 
       digits = 4)
 ```
-
 
 
 [^1]:Domencich & McFadden (1975) Urban Travel Demand: A Behavioral Analysis, Elsevier. 
